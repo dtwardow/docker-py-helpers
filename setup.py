@@ -7,7 +7,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name='BT-NRTOS-DevEnv_Tools',
+    name='DockerPy-Helpers',
     version='0.1',
     description='Support To      fffsdfasfsadfasdfols for the NRTOS Development Environment based on Docker',
     long_description=read('README.rst'),
@@ -20,9 +20,9 @@ setup(
         'Topic :: Utilities',
         'License :: Other/Proprietary License'
     ],
-    keywords='nrtos cross docker daemon dns',
+    keywords='docker daemon dns',
     author='Dennis Twardowsky',
-    author_email='dennis.twardowsky@rail.bombardier.com',
+    author_email='twardowsky@gmail.com',
     license='proprietary',
     packages=[
         'extdocker',
@@ -35,7 +35,7 @@ setup(
     ],
     install_requires=[
         # Current installed Docker-API is not compatible with release >=1.8
-        'docker-py<1.8',
+        'docker-py',
         'nagiosplugin',
         'pyyaml'
     ],

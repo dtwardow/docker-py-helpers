@@ -9,7 +9,7 @@ def read(fname):
 setup(
     name='DockerPy-Helpers',
     version='0.1',
-    description='Support To      fffsdfasfsadfasdfols for the NRTOS Development Environment based on Docker',
+    description='Support Tools for the Docker-based environments',
     long_description=read('README.rst'),
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -26,15 +26,16 @@ setup(
     license='proprietary',
     packages=[
         'extdocker',
-        'extdocker/helpers'
+        'extdocker/helpers',
     ],
     scripts=[
         'bin/dockerdns.py',
-        'bin/dockerRmUnknown.py',
-        'lib/nagios/plugins/check_docker.py'
+        'bin/dockerRmUnknown.py'
+    ],
+    data_files=[
+        ('/lib/nagios/plugins', ['lib/nagios/plugins/check_docker.py'])
     ],
     install_requires=[
-        # Current installed Docker-API is not compatible with release >=1.8
         'docker-py',
         'nagiosplugin',
         'pyyaml'

@@ -16,4 +16,4 @@ for image in c.untaggedImages():
         if c.container(name=container_digest, isRunning=False):
             c.remove_container(container=container_digest, force=True)
 
-    c.remove_image(image=image, force=True)
+    c.remove_image(image=image, force=False)

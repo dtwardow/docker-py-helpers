@@ -105,8 +105,28 @@ class DockerImage:
         self.c = ExtDocker()
         self.i = image
 
+        self.repotag = self.i['RepoTags'][0] if self.i else None
+
     def name(self):
-        return self.i['RepoTags'][0] if self.i else None
+        return self.repotag.split(':')[0] if self.i else None
+
+    def tag(self):
+        return self.repotag.split(':')[1] if self.i else None
+
+    def full_name(self):
+        return self.repotag
+
+
+class DockerImages:
+    def __init__(self, images):
+        self.c = ExtDocker()
+        self.images = images
+
+    def image(self, tag=None):
+        for item in self.images:
+            image = DockerImage(item)
+            if image.tag() == tag:
+                return image
 
 
 class ExtDocker(docker.Client):
@@ -116,14 +136,13 @@ class ExtDocker(docker.Client):
                 return DockerContainer(self.inspect_container(item['Id']))
         return None
 
-    def image(self, name=None, id=None):
-        for item in self.images(name=name, all=False):
-            if (id):
+    def image(self, name=None, id=None, isRunning=True):
+        if (id):
+            for item in self.images(name=name, all=not(isRunning)):
                 if (id == item['Id']):
                     return DockerImage(item)
-            elif (name):
-                if (name == item['RepoTags'][0].split(':')[0]):
-                    return DockerImage(item)
+        elif (name):
+            return DockerImages(self.images(name=name, all=not(isRunning)))
         else:
             return None
 

@@ -32,12 +32,8 @@ setup(
         'bin/dockerdns.py',
         'bin/dockerRmUnknown.py'
     ],
-    data_files=[
-        ('/lib/nagios/plugins', ['lib/nagios/plugins/check_docker.py'])
-    ],
     install_requires=[
         'docker-py',
-        'nagiosplugin',
         'pyyaml'
     ],
     include_package_data=True,

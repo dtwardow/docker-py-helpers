@@ -2,7 +2,9 @@
 import getopt
 import signal
 import sys
+import os
 import extdocker
+import subprocess
 
 running = True
 headfoot_identifier = "DOCKER CONTAINERS"
@@ -13,6 +15,8 @@ footer_identifier = "# === " + headfoot_identifier + " END ==="
 _HOSTS_FILE_ = "/etc/hosts"
 # Default: Domain Suffix
 _HOST_DOMAIN_ = "docker"
+# Default: Don't send SIGHUP to process
+_SIGHUPPROC_ = ""
 
 c = extdocker.ExtDocker()
 
@@ -75,19 +79,30 @@ def on_daemonize():
             if not running:
                 break
 
+            if not 'status' in i:
+                continue
+
             event_type = i['status']
             event_object = i['id']
-            container_name = c.container(event_object).name()
-            contianer_ip = c.container(event_object).ipAddress()
 
-            # Handle event based on container status
+            event_container = c.container(event_object)
+
+            if not isinstance(event_container, extdocker.DockerContainer):
+                continue
+
+            container_name = event_container.name()
+            container_ip = event_container.ipAddress()
+
+                # Handle event based on container status
             if event_type == 'start':
-                print ("START <" + container_name + ">")
-                add_host(container_name, contianer_ip)
-
+                if container_name.strip() and container_ip.strip():
+                    print ("START <" + container_name + "> with IP <" + container_ip + ">")
+                    add_host(container_name, container_ip)
+                    send_signal(_SIGHUPPROC_, signal.SIGHUP)
             if event_type == 'stop':
                 print ("STOP  <" + container_name + ">")
                 remove_host(container_name)
+                send_signal(_SIGHUPPROC_, signal.SIGHUP)
 
 
 def on_prepare():
@@ -151,7 +166,7 @@ def add_host(hostname, ip):
     """
 
     if not hostname.strip() or not ip.strip():
-        print ("ERROR: addHost: Hostname or IP shall not be empty!")
+        print ("ERROR: addHost: Hostname and IP must not be empty!")
         return False
 
     complete_name = hostname + '.' + _HOST_DOMAIN_
@@ -163,12 +178,26 @@ def add_host(hostname, ip):
     return True
 
 
+def send_signal(name, sig):
+    if name != "":
+        pid_to_kill = get_pid(name)
+        if pid_to_kill > 0:
+            print ("SIGHUP > " + name + ":" + str(pid_to_kill))
+            os.kill(pid_to_kill, sig)
+        else:
+            print ("WARNING: PID of process <" + name + "> not found!")
+
+
+def get_pid(name):
+    return int(subprocess.check_output(["pidof","-s",name]))
+
 def usage():
     print('dockerdns.py [-hdc] [-s <domain-suffix>] [-f <alt-hosts-file>]')
     print('Options:')
     print('    -h             Print help message (and exit)')
     print('    -d             Start Docker event-lister')
     print('    -c             Clean hosts-file and exit (not compatible with -d)')
+    print('    -u string      Send signal SIGHUP to given process')
     print('    -d string      Domain-Suffix to in hosts-file (default: ' + _HOST_DOMAIN_ + ')')
     print('    -f filename    Alternate path of the hosts file (default: ' + _HOSTS_FILE_ + ')')
 
@@ -181,9 +210,10 @@ def main(argc, argv):
 
     global _HOST_DOMAIN_
     global _HOSTS_FILE_
+    global _SIGHUPPROC_
 
     try:
-        opts, args = getopt.getopt(argv, 'ds:f:ch')
+        opts, args = getopt.getopt(argv, 'ds:f:cu:h')
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -196,6 +226,8 @@ def main(argc, argv):
             _HOSTS_FILE_ = arg
         elif opt == '-c':
             _UPDATE_ = False
+        elif opt == '-u':
+            _SIGHUPPROC_ = arg
         elif opt == '-h':
             usage()
             sys.exit(0)
